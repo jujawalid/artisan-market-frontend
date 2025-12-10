@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Artisan Market - Craft Kits & Classes</title>
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+      :root {
+        --primary-color: #34495e;
+        --secondary-color: #e67e22;
+        --accent-color: #2ecc71;
+        --background-light: #f9f9f9;
+        --card-bg: #ffffff;
+      }
+      body { 
+        font-family: 'Arial', sans-serif; 
+        background-color: var(--background-light); 
+        color: #333; 
+        margin: 0; 
+        line-height: 1.5;
+      }
+      #app { 
+        max-width: 1200px; 
+        margin: 30px auto; 
+        padding: 30px; 
+        background: var(--card-bg); 
+        border-radius: 12px; 
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+      }
+      header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        border-bottom: 2px solid #eee; 
+        padding-bottom: 15px; 
+        margin-bottom: 25px; 
+      }
+      h1 { color: var(--primary-color); font-size: 2em; }
+      h2 { color: var(--primary-color); border-left: 5px solid var(--secondary-color); padding-left: 10px; margin-bottom: 20px; }
+      
+      .cart-button { 
+        padding: 10px 20px; 
+        background-color: var(--secondary-color); 
+        color: white; 
+        border: none; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        font-weight: 600;
+        transition: background-color 0.3s; 
+      }
+      .cart-button:hover:not(:disabled) { background-color: #d35400; }
+      .cart-button:disabled { background-color: #ccc; cursor: not-allowed; }
+      .checkout-btn { 
+        background-color: var(--accent-color); 
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      .checkout-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+      .controls { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 15px; 
+        margin-bottom: 30px; 
+        align-items: center; 
+        padding: 15px; 
+        background-color: var(--background-light); 
+        border-radius: 8px;
+      }
+      .search-input, .sort-select { 
+        padding: 8px; 
+        border: 1px solid #ddd; 
+        border-radius: 4px; 
+        font-size: 0.95em; 
+      }
+      
+      .lesson-list { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+        gap: 25px; 
+      }
+      .lesson-card { 
+        padding: 20px; 
+        border-radius: 10px; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+        position: relative; 
+        background: var(--card-bg);
+        transition: transform 0.2s;
+      }
+      .lesson-card:hover { transform: translateY(-3px); }
+      .icon { 
+        font-size: 2.5em; 
+        position: absolute; 
+        top: 15px; 
+        right: 20px; 
+        color: var(--secondary-color);
+      }
+      .lesson-card h3 { color: var(--primary-color); margin-top: 0; font-size: 1.2em; }
+      .add-to-cart-btn { 
+        width: 100%; 
+        padding: 10px; 
+        margin-top: 15px; 
+        background-color: var(--primary-color); 
+        color: white; 
+        border: none; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        font-weight: 600;
+      }
+      .add-to-cart-btn:disabled { background-color: #e74c3c; cursor: not-allowed; }
+
+      .cart-page { 
+        padding: 25px; 
+        border-radius: 10px; 
+        background: var(--background-light); 
+      }
+      .cart-item { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        padding: 12px 0; 
+        border-bottom: 1px dashed #ddd; 
+      }
+      .cart-item button { 
+        background-color: #95a5a6; 
+        color: white; 
+        border: none; 
+        padding: 6px 12px; 
+        border-radius: 4px; 
+        cursor: pointer; 
+      }
+
+      .checkout-section { 
+        margin-top: 30px; 
+        padding: 25px; 
+        background-color: var(--card-bg); 
+        border-radius: 10px; 
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      }
+      .form-group { margin-bottom: 15px; }
+      .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color); }
+      .form-group input { 
+        width: 100%; 
+        padding: 10px; 
+        border: 1px solid #ccc; 
+        border-radius: 6px; 
+        box-sizing: border-box; 
+      }
+      .checkout-message { 
+        padding: 15px; 
+        background-color: #d4edda; 
+        color: #155724; 
+        border-radius: 6px; 
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+      /* Validation styling for invalid input */
+      .input-error {
+        border: 2px solid #e74c3c !important; 
+        background-color: #fceae7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1><i class="fa-solid fa-paintbrush"></i> <span v-text="sitename"></span></h1>
+        <button 
+          v-on:click="toggleView" 
+          :disabled="totalCartItems === 0 && showLessons" 
+          class="cart-button"
+        >
+          <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+          {{ showLessons ? 'View Cart (' + totalCartItems + ')' : 'Back to Kits' }}
+        </button>
+      </header>
+
+      <main>
+        <div v-if="showLessons" class="lessons-view">
+          <h2>Browse Artisan Kits & Classes</h2>
+          <p v-if="checkoutMessage && !lessons.length" class="checkout-message" style="background-color: #f8d7da; color: #721c24;">{{ checkoutMessage }}</p>
+
+          <section class="controls">
+            <input type="text" v-model="searchQuery" placeholder="Search product or creator..." class="search-input">
+            
+            <label>Sort By:</label>
+            <select v-model="sortAttribute" class="sort-select">
+              <option value="subject">Product Name</option>
+              <option value="location">Creator/Vendor</option>
+              <option value="price">Price</option>
+              <option value="spaces">Stock</option>
+            </select>
+            <select v-model="sortOrder" class="sort-select">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </section>
+          
+          <section class="lesson-list">
+            <div v-for="lesson in sortedAndFilteredLessons" :key="lesson._id" class="lesson-card">
+              <i :class="lesson.icon" class="icon"></i> 
+              <h3>{{ lesson.subject }}</h3>
+              <p>📍 **Creator/Vendor:** {{ lesson.location }}</p>
+              <p>💰 **Price:** ${{ lesson.price.toFixed(2) }}</p>
+              <p>📦 **Stock Left:** {{ lesson.spaces }}</p>
+              
+              <button 
+                @click="addToCart(lesson)" 
+                :disabled="lesson.spaces === 0"
+                class="add-to-cart-btn"
+              >
+                {{ lesson.spaces === 0 ? 'Out of Stock' : 'Add to Cart' }}
+              </button>
+            </div>
+          </section>
+        </div>
+        
+        <div v-else class="cart-page">
+          <h2>🛒 Order Review</h2>
+          
+          <div v-if="cart.length > 0" class="cart-list">
+            <h3>Items in Cart (Total: **${{ totalCartPrice }}**)</h3>
+            <div v-for="item in cart" :key="item.id" class="cart-item">
+              <span>**{{ item.subject }}** (x{{ item.quantity }})</span>
+              <button @click="removeFromCart(item.id)">Remove 1</button>
+            </div>
+          </div>
+          <div v-else>
+            <p>Your shopping cart is currently empty.</p>
+          </div>
+          
+          <section class="checkout-section">
+            <h3>Customer Details for Order Submission</h3>
+            <p v-if="checkoutMessage" class="checkout-message">{{ checkoutMessage }}</p>
+            
+            <form @submit.prevent="submitOrder">
+              
+              <div class="form-group">
+                <label for="name">Full Name (Letters Only):</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    v-model="order.name" 
+                    :class="{ 'input-error': order.name.length > 0 && !validateName() }"
+                    required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Phone Number (Numbers Only):</label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    v-model="order.phone" 
+                    :class="{ 'input-error': order.phone.length > 0 && !validatePhone() }"
+                    required
+                >
+              </div>
+              
+              <button type="submit" :disabled="!isFormValid" class="checkout-btn">
+                Place Order (Total: ${{ totalCartPrice }})
+              </button>
+            </form>
+          </section>
+
+          <button v-on:click="toggleView" class="cart-button" style="margin-top: 25px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Kits
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <script type="text/javascript">
+      
+      var webstore = new Vue({
+        el: "#app",
+        data: {
+          sitename: "🎨 Artisan Market",
+          showLessons: true, 
+          lessons: [], // Data fetched from API (MongoDB Atlas)
+          cart: [], 
+          
+          sortAttribute: 'subject', 
+          sortOrder: 'asc', 
+          searchQuery: '',
+          
+          order: {
+            name: '',
+            phone: ''
+          },
+          checkoutMessage: '',
+          
+          // API Base URL (MUST BE CORRECT for the server running on port 3000)
+          API_BASE_URL: 'http://localhost:3000' 
+        },
+        
+        watch: {
+          // Watches the search query and immediately triggers the fetch (10% search requirement)
+          searchQuery: {
+              handler: 'fetchLessons', 
+              immediate: false
+          }
+        },
+
+        methods: {
+          toggleView: function () {
+            this.showLessons = !this.showLessons;
+            this.checkoutMessage = '';
+          },
+
+          // Fetch Function A: GET all lessons (3%) and handles search (10%)
+          async fetchLessons() {
+              const url = this.searchQuery 
+                  ? `${this.API_BASE_URL}/search?q=${this.searchQuery}` 
+                  : `${this.API_BASE_URL}/lessons`; 
+
+              try {
+                  const response = await fetch(url);
+                  if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                  }
+                  const data = await response.json();
+                  this.lessons = data; 
+              } catch (error) {
+                  console.error('Error fetching lessons:', error);
+                  // Display error if API is unreachable
+                  this.checkoutMessage = `❌ Error connecting to API: ${error.message}. Is your server running on port 3000?`;
+              }
+          },
+
+          addToCart: function (lesson) {
+            if (lesson.spaces > 0) {
+              lesson.spaces--;
+              
+              // Use lesson._id as the unique identifier from MongoDB
+              const cartItem = this.cart.find(item => item.id === lesson._id); 
+              
+              if (cartItem) {
+                cartItem.quantity++;
+              } else {
+                this.cart.push({
+                  id: lesson._id, 
+                  subject: lesson.subject,
+                  price: lesson.price,
+                  quantity: 1
+                });
+              }
+            }
+          },
+          
+          removeFromCart: function (lessonId) {
+            const cartIndex = this.cart.findIndex(item => item.id === lessonId);
+            
+            if (cartIndex !== -1) {
+              const cartItem = this.cart[cartIndex];
+              cartItem.quantity--;
+              
+              const lesson = this.lessons.find(l => l._id === lessonId);
+              if (lesson) {
+                lesson.spaces++; // Restore local stock
+              }
+              
+              if (cartItem.quantity === 0) {
+                this.cart.splice(cartIndex, 1);
+              }
+            }
+          },
+          
+          // Checkout Validation Functions (Requirement 6.C)
+          validateName: function () {
+              // Name must be letters and spaces only
+              const nameRegex = /^[a-zA-Z\s]+$/;
+              return nameRegex.test(this.order.name) && this.order.name.length > 0;
+          },
+          validatePhone: function () {
+              // Phone must be numbers only
+              const phoneRegex = /^[0-9]+$/;
+              return phoneRegex.test(this.order.phone) && this.order.phone.length > 0;
+          },
+
+          // Checkout Submission (Fetch Function B & C)
+          async submitOrder() {
+            if (this.cart.length === 0) {
+              this.checkoutMessage = '❌ Your cart is empty.';
+              return;
+            }
+            if (!this.validateName() || !this.validatePhone()) {
+                this.checkoutMessage = '❌ Please enter a valid name (letters only) and phone number (numbers only).';
+                return;
+            }
+            
+            // 1. Prepare Order Data
+            const orderData = {
+                name: this.order.name,
+                phone: this.order.phone,
+                cart: this.cart,
+                timestamp: new Date().toISOString()
+            };
+
+            let postOrderSuccess = false;
+
+            // Fetch Function B: POST a new order (3%)
+            try {
+                const response = await fetch(`${this.API_BASE_URL}/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Order POST failed with status: ${response.status}`);
+                }
+                postOrderSuccess = true;
+            } catch (error) {
+                this.checkoutMessage = `❌ Error placing order: ${error.message}`;
+                console.error('POST Order Error:', error);
+                return;
+            }
+
+            // 2. If Order POST succeeded, perform PUT requests to update stock
+            if (postOrderSuccess) {
+                let putUpdateSuccess = true;
+                
+                // Fetch Function C: PUT to update lesson space for each item (3%)
+                for (const item of this.cart) {
+                    const lesson = this.lessons.find(l => l._id === item.id);
+                    if (lesson) {
+                        // Calculate the new stock level
+                        const newSpaces = lesson.spaces - item.quantity; 
+                        
+                        try {
+                            // Send PUT request to the /lessons/:id route
+                            const putResponse = await fetch(`${this.API_BASE_URL}/lessons/${item.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ spaces: newSpaces })
+                            });
+
+                            if (!putResponse.ok) {
+                                putUpdateSuccess = false;
+                                console.error(`PUT Stock Update failed for ID ${item.id}`);
+                            }
+                        } catch (error) {
+                            putUpdateSuccess = false;
+                            console.error(`PUT Stock Error for ID ${item.id}:`, error);
+                        }
+                    }
+                }
+
+                // 3. Final steps after transaction
+                if (putUpdateSuccess) {
+                    this.checkoutMessage = '✅ Success! Your Artisan order has been submitted and stock updated.';
+                    this.cart = [];
+                    this.order = { name: '', phone: '' }; // Reset form data
+                    this.fetchLessons(); // Re-fetch to show updated stock
+                } else {
+                    this.checkoutMessage = '⚠️ Order placed, but stock update failed for some items. Check API logs.';
+                }
+            }
+          },
+
+        },
+        
+        computed: {
+          totalCartItems: function () {
+            return this.cart.reduce((total, item) => total + item.quantity, 0);
+          },
+          totalCartPrice: function () {
+            // Ensures total is formatted to two decimal places
+            return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2);
+          },
+          
+          isFormValid: function() {
+            // Checkout enabled if cart has items AND name/phone are valid
+            return this.cart.length > 0 && this.validateName() && this.validatePhone();
+          },
+          
+          sortedAndFilteredLessons: function() {
+            const lessons = [...this.lessons]; 
+            
+            lessons.sort((a, b) => {
+              let valA = a[this.sortAttribute];
+              let valB = b[this.sortAttribute];
+              
+              if (typeof valA === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+              }
+              
+              if (valA < valB) {
+                return this.sortOrder === 'asc' ? -1 : 1;
+              }
+              if (valA > valB) {
+                return this.sortOrder === 'asc' ? 1 : -1;
+              }
+              return 0;
+            });
+
+            return lessons;
+          }
+        },
+
+        mounted() {
+          // Fetch data immediately when the app loads
+          this.fetchLessons(); 
+        }
+      });
+    </script>
+  </body>
+</html>
